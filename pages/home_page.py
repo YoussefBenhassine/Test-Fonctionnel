@@ -139,3 +139,126 @@ class HomePage(BasePage):
         # Importer CategoryPage ici pour éviter les imports circulaires
         from pages.category_page import CategoryPage
         return CategoryPage(self.driver)
+    
+    def extract_all_navigation_links(self):
+        
+        import time
+        time.sleep(2)  # Attendre que la page soit complètement chargée
+        
+        all_links = []
+        seen_urls = set()
+        
+        # Sélecteurs pour trouver tous les liens de navigation
+        link_selectors = [
+            (By.XPATH, "//a[@href]"),  # Tous les liens avec href
+            (By.XPATH, "//nav//a[@href]"),  # Liens dans les menus de navigation
+            (By.XPATH, "//ul[contains(@class, 'menu')]//a[@href]"),  # Liens dans les menus
+            (By.XPATH, "//div[contains(@class, 'category')]//a[@href]"),  # Liens de catégories
+            (By.XPATH, "//div[contains(@class, 'nav')]//a[@href]"),  # Liens dans les divs de navigation
+        ]
+        
+        for selector in link_selectors:
+            try:
+                links = self.find_elements(*selector)
+                for link in links:
+                    try:
+                        href = link.get_attribute('href')
+                        text = link.text.strip()
+                        
+                        if not href:
+                            continue
+                        
+                        # Normaliser l'URL
+                        href = href.strip()
+                        
+                        # Filtrer les liens non pertinents
+                        if self._is_valid_link(href):
+                            # Éviter les doublons
+                            if href not in seen_urls:
+                                seen_urls.add(href)
+                                all_links.append({
+                                    'href': href,
+                                    'text': text if text else href
+                                })
+                    except:
+                        continue
+            except:
+                continue
+        
+        return all_links
+    
+    def _is_valid_link(self, href):
+        """
+        Vérifie si un lien est valide pour être testé
+        
+        Args:
+            href: URL du lien
+            
+        Returns:
+            bool: True si le lien est valide
+        """
+        if not href:
+            return False
+        
+        href_lower = href.lower()
+        
+        # Exclure les liens non pertinents
+        exclude_patterns = [
+            '#',  # Ancres
+            'javascript:',  # JavaScript
+            'mailto:',  # Email
+            'tel:',  # Téléphone
+            'whatsapp',  # WhatsApp
+            'facebook',  # Réseaux sociaux
+            'twitter',
+            'instagram',
+            'youtube',
+            'linkedin',
+            'pinterest',
+            'tiktok',
+            'snapchat',
+        ]
+        
+        for pattern in exclude_patterns:
+            if pattern in href_lower:
+                return False
+        
+        # Vérifier que c'est un lien du site Tunisianet
+        if 'tunisianet.com.tn' not in href_lower:
+            return False
+        
+        # Exclure la page d'accueil (déjà testée)
+        if href_lower == self.base_url.lower() or href_lower == f"{self.base_url.lower()}/":
+            return False
+        
+        # Inclure les liens vers des pages de catégories, produits, etc.
+        include_patterns = [
+            '/categorie',
+            '/category',
+            '/produit',
+            '/product',
+            '/informatique',
+            '/telephonie',
+            '/stockage',
+            '/impression',
+            '/tv-son-photos',
+            '/electromenager',
+            '/reseau',
+            '/securite',
+            '/bureautique',
+        ]
+        
+        # Si le lien contient un pattern inclus, il est valide
+        for pattern in include_patterns:
+            if pattern in href_lower:
+                return True
+        
+        # Si le lien est une URL relative ou absolue du site, l'inclure aussi
+        if href_lower.startswith('/') or href_lower.startswith('http'):
+            # Mais exclure les liens vers des fichiers (images, PDF, etc.)
+            exclude_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.zip', '.exe', '.css', '.js']
+            if any(href_lower.endswith(ext) for ext in exclude_extensions):
+                return False
+            return True
+        
+        return False
