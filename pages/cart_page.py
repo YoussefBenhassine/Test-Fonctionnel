@@ -21,27 +21,47 @@ class CartPage(BasePage):
         super().__init__(driver)
     
     def verify_product_in_cart(self):
-        
-        # Attendre que le panier se charge
         import time
-        time.sleep(2)
         
-        # Vérifier la présence d'articles dans le panier
-        # Plusieurs façons de vérifier :
-        # 1. Vérifier les items du panier
-        if self.is_element_present(*self.CART_ITEMS, timeout=5):
-            return True
+        # Attendre que le panier se charge complètement
+        time.sleep(3)
+        
+        # Vérifier que nous sommes bien sur la page du panier
+        current_url = self.get_current_url().lower()
+        if "cart" not in current_url and "panier" not in current_url:
+            print(f"[WARNING] URL actuelle ne semble pas être la page du panier: {current_url}")
+        
+        # 1. Vérifier la présence d'items du panier (méthode principale)
+        if self.is_element_present(*self.CART_ITEMS, timeout=10):
+            # Vérifier qu'il y a au moins un item avec un nom de produit
+            try:
+                cart_items = self.find_elements(*self.CART_ITEMS)
+                if cart_items and len(cart_items) > 0:
+                    print(f"[OK] {len(cart_items)} article(s) trouvé(s) dans le panier")
+                    return True
+            except:
+                pass
         
         # 2. Vérifier qu'il n'y a pas de message "panier vide"
-        if not self.is_element_present(*self.CART_EMPTY_MESSAGE, timeout=2):
-            # Si pas de message "vide", on considère qu'il y a des produits
-            return True
+        if self.is_element_present(*self.CART_EMPTY_MESSAGE, timeout=2):
+            print("[FAIL] Message 'panier vide' détecté")
+            return False
         
-        # 3. Vérifier l'URL (si elle contient "cart" ou "panier")
-        current_url = self.get_current_url().lower()
+        # 3. Vérifier la présence de noms de produits dans le panier
+        try:
+            product_names = self.find_elements(*self.PRODUCT_IN_CART)
+            if product_names and len(product_names) > 0:
+                print(f"[OK] {len(product_names)} nom(s) de produit(s) trouvé(s) dans le panier")
+                return True
+        except:
+            pass
+        
+        # 4. Vérifier l'URL comme dernier recours
         if "cart" in current_url or "panier" in current_url:
-            return True
+            print("[WARNING] Sur la page du panier mais aucun produit détecté")
+            return False
         
+        print("[FAIL] Aucun produit détecté dans le panier")
         return False
     
     def proceed_to_checkout(self):

@@ -195,20 +195,20 @@ def test_full_tunisianet_flow(driver):
     product_page = results_page.select_first_product()
     print("[OK] Produit selectionne dans les resultats")
 
-    # 4. Ajout au panier
+    # 4. Ajout au panier (avec clic sur "Continuer" dans la pop-up)
     cart_page = product_page.add_to_cart()
-    print("[OK] Produit ajoute au panier")
+    print("[OK] Produit ajoute au panier et pop-up fermee avec 'Continuer'")
 
-    # Si l'ajout au panier ne redirige pas automatiquement, aller au panier
-    if "cart" not in cart_page.get_current_url().lower() and "panier" not in cart_page.get_current_url().lower():
-        cart_page = product_page.go_to_cart()
-        print("[OK] Navigation vers le panier")
+    # 5. Vérifier que nous sommes sur la page du panier
+    current_url = cart_page.get_current_url().lower()
+    assert "cart" in current_url or "panier" in current_url, f"La page du panier n'a pas été ouverte. URL actuelle: {current_url}"
+    print("[OK] Page du panier ouverte avec succes")
 
-    # 5. Vérifier que le produit est dans le panier
+    # 6. Vérifier que le produit est visible dans le panier
     assert cart_page.verify_product_in_cart(), "Le produit n'est pas présent dans le panier"
     print("[OK] Produit verifie dans le panier")
 
-    # 6. Début du checkout
+    # 7. Début du checkout
     checkout_success = cart_page.proceed_to_checkout()
     if checkout_success:
         print("[OK] Redirection vers le checkout reussie")
