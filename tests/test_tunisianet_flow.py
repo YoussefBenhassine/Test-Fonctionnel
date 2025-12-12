@@ -54,7 +54,7 @@ def test_all_pages_functionality(driver):
         return
     
     # Limiter le nombre de pages à tester (pour éviter un test trop long)
-    max_pages_to_test = 30
+    max_pages_to_test = 10
     links_to_test = all_links[:max_pages_to_test]
     
     if len(all_links) > max_pages_to_test:

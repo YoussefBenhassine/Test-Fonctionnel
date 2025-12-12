@@ -1,6 +1,7 @@
 """
 BasePage : Classe de base pour toutes les pages
 Contient les actions génériques communes à toutes les pages
+Compatible avec Selenium 4.25.0
 """
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
